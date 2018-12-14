@@ -28,7 +28,6 @@ public class DoorKnockDoor : MonoBehaviour {
     private bool win = false;
     private Animator animator;
     private BoxCollider2D collider;
-    private bool intersecting = false;
 
     // Use this for initialization
     void Start() {
@@ -40,16 +39,11 @@ public class DoorKnockDoor : MonoBehaviour {
         collider = GetComponent<BoxCollider2D>();
         // Randomize starting position and movement direction
         NewDirection();
-        Teleport();
+        Teleport(false);
     }
 	
     // Update is called once per frame
     void Update() {
-        // Test if sprite is clicked
-        if (Input.GetMouseButtonDown(0) && intersecting) {
-            print(clicksToWin);
-            OnClick(); 
-        }
         if (shouldMove && direction != null && !win){
             // Add the direction we're moving in to our position
             Vector2 newPosition = (Vector2)transform.position + (direction*Time.deltaTime);
@@ -62,13 +56,6 @@ public class DoorKnockDoor : MonoBehaviour {
                 direction.y *= -1;
             }
         }
-    }
-    //OnTriggerStay2D doesn't work as well
-    void OnTriggerEnter2D(Collider2D other){
-        intersecting = true;
-    }
-    void OnTriggerExit2D(Collider2D other){
-        intersecting = false;
     }
     
     // When the object is clicked
@@ -84,23 +71,21 @@ public class DoorKnockDoor : MonoBehaviour {
             else if (teleportOnClick){
                 Teleport();
             }
-            ParticleSystem particleSystem = GetComponentInChildren<ParticleSystem>();
-            particleSystem.Play();
-            NewDirection();
+            
+            MicrogameController.instance.playSFX(
+                knockSound, volume: 0.5f,
+                panStereo: AudioHelper.getAudioPan(transform.position.x)
+            );
+            //NewDirection();
         }
-        MicrogameController.instance.playSFX(
-            knockSound, volume: 0.5f,
-            panStereo: AudioHelper.getAudioPan(transform.position.x)
-        );
-        NewDirection();
     }
     
     // Move to a random location
-    void Teleport() {
+    void Teleport(bool animate=true) {
         float newx = Random.Range(-screenWidth, screenWidth) / 2;
         float newy = Random.Range(-screenHeight, screenHeight) / 2;
         transform.position = new Vector2(newx, newy);
-        animator.SetTrigger("Clicked");
+        if (animate) animator.SetTrigger("Clicked");
     }
     
     // Set a different direction
